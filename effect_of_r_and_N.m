@@ -17,13 +17,15 @@ display = true;
 % Setup variables
 N_base = 15;
 r_base = 10; 
-simulations = 40;
+simulations = 100;
 epsilon = 1e-10;
 
 
+
+% How do different r and N affect the convergence? 
 r_values      = [];
 r_mean_values = [];
-for r = 6:15
+for r = 6:10
 % Run simulation
 [iterations, L_history, error_history] = simulation(r, N_base, simulations, epsilon);
 
@@ -33,7 +35,7 @@ end
 
 N_values      = [];
 N_mean_values = [];
-for N = 3:30
+for N = 3:15
 % Run simulation
 [iterations, L_history, error_history] = simulation(r_base, N, simulations, epsilon);
 
@@ -50,9 +52,6 @@ if(display)
     N_plot(N_values, N_mean_values)
 
 end
-
-%%
-
 
 
 
@@ -108,69 +107,6 @@ function N_plot(N_values, N_mean_values)
     set(gca,'FontSize',12);
 
 end
-
-
-function plot_iterations(iterations, r_start)
-
-    % Keep only columns that were actually filled
-    valid = any(iterations > 0, 1);
-    iterations = iterations(:, valid);
-
-    % Compute statistics
-    mean_iters = mean(iterations,1);
-
-    % X-axis: number of samples r
-    r_values = r_start:(r_start + length(mean_iters) - 1);
-
-    % Print table
-    fprintf("\n===== Convergence vs Sample Size =====\n");
-    fprintf("r\tmean iters\n");
-    for j = 1:length(r_values)
-        fprintf("%d\t%.2f\n", r_values(j), mean_iters(j));
-    end
-
-    % Plot
-    figure;
-    plot(r_values, mean_iters, 'o-', 'LineWidth', 2, 'MarkerSize', 6);
-    grid on;
-    xlabel('Number of samples r', 'FontSize', 12);
-    ylabel('Mean iterations to convergence', 'FontSize', 12);
-    title('Effect of Sample Size on Convergence Speed', ...
-          'FontSize', 14, 'FontWeight', 'bold');
-
-end
-
-
-
-
-function plot_convergence(L_history, error_history, epsilon)
-
-    k = length(L_history(:,1))-1;
-    figure('Position', [100, 100, 1200, 800]);
-    
-    % Subplot 1: Policy convergence
-    subplot(1, 2, 1);
-    plot(0:k, L_history(:,1), 'b-o', 'LineWidth', 2, 'MarkerSize', 6);
-    hold on;
-    plot(0:k, L_history(:,2), 'r-s', 'LineWidth', 2, 'MarkerSize', 6);
-    grid on;
-    xlabel('Iteration', 'FontSize', 12);
-    ylabel('Gain Value', 'FontSize', 12);
-    title('Policy Convergence', 'FontSize', 14, 'FontWeight', 'bold');
-    legend('L(1)', 'L(2)', 'Location', 'best');
-    
-    % Subplot 2: Policy change 
-    subplot(1, 2, 2);
-    semilogy(1:length(error_history), error_history, 'm-o', 'LineWidth', 2, 'MarkerSize', 6);
-    hold on;
-    yline(epsilon, 'k--', 'LineWidth', 1.5, 'Label', '\epsilon threshold');
-    grid on;
-    xlabel('Iteration', 'FontSize', 12);
-    ylabel('||L_{k+1} - L_k||', 'FontSize', 12);
-    title('Policy Change per Iteration', 'FontSize', 14, 'FontWeight', 'bold');
-end
-
-
 
 
 function [iterations, L_history, error_history] = simulation(r, N, simulations, epsilon)

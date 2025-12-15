@@ -1,0 +1,141 @@
+% Zermelo Problem - Discretization Method
+% Exercise 1.2
+
+clear all;
+close all;
+clc;
+
+% Parameters
+tf = 1;      % Final time
+w = 1;       % Ship speed relative to water
+Xi = [0; 0]; % Initial position [x; y]
+
+% Discretization parameters
+N = 50;      % Number of time steps
+T = tf / N;  % Sample time
+
+t_init = linspace(0, tf, N+1)';
+theta0 = atan(tf - t_init);  % Use analytical solution as initial guess
+
+% Define objective function
+objective = @(theta) zermelo_objective_penalty(theta, Xi, T, w, N);
+
+% Solve using fminunc (unconstrained optimization with penalties)
+fprintf('\nSolving optimization problem...\n');
+options = struct('GradObj', 'on', 'MaxIter', 2000, 'TolFun', 1e-10, 'TolX', 1e-10, 'Display', 'off');
+
+tic;
+[theta_opt, fval] = fminunc(objective, theta0, options);
+time_elapsed = toc;
+
+% Simulate forward with optimal control
+[x_opt, y_opt] = simulate_zermelo(theta_opt, Xi, T, w, N);
+
+t_opt = linspace(0, tf, N+1)';
+
+% Compare with analytical solution
+theta_analytical = atan(tf - t_opt);
+
+% Plot 1: Compare trajectories
+figure('Position', [100 100, 1200 400], 'Visible', 'off');
+
+subplot(1, 3, 1);
+plot(x_opt, y_opt, 'b-', 'LineWidth', 2);
+hold on;
+plot(x_opt(1), y_opt(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g');
+plot(x_opt(end), y_opt(end), 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+grid on;
+xlabel('x', 'FontSize', 12);
+ylabel('y', 'FontSize', 12);
+title('Optimal Trajectory (Discretization)', 'FontSize', 14);
+legend('Trajectory', 'Start', 'End', 'Location', 'northeast');
+axis equal;
+
+subplot(1, 3, 2);
+plot(t_opt, x_opt, 'b-', 'LineWidth', 2);
+hold on;
+plot(t_opt, y_opt, 'r--', 'LineWidth', 2);
+grid on;
+xlabel('Time t', 'FontSize', 12);
+ylabel('Position', 'FontSize', 12);
+title('States vs Time', 'FontSize', 14);
+legend('x(t)', 'y(t)', 'Location', 'northeast');
+
+subplot(1, 3, 3);
+plot(t_opt, theta_opt * 180/pi, 'b-', 'LineWidth', 2, 'DisplayName', 'Discretization');
+hold on;
+plot(t_opt, theta_analytical * 180/pi, 'r--', 'LineWidth', 2, 'DisplayName', 'Analytical');
+grid on;
+xlabel('Time t', 'FontSize', 12);
+ylabel('\theta(t) [degrees]', 'FontSize', 12);
+title('Control Comparison', 'FontSize', 14);
+legend('Location', 'northeast');
+
+print('-dpng', '-r300', 'figures/zermelo_discretization_comparison.png');
+fprintf('\nSaved: figures/zermelo_discretization_comparison.png\n');
+
+% Plot 2: Error analysis
+figure('Position', [100 100 1200 800], 'Visible', 'off');
+
+subplot(2, 2, 1);
+plot(t_opt, theta_opt - theta_analytical, 'k-', 'LineWidth', 2);
+grid on;
+xlabel('Time t', 'FontSize', 12);
+ylabel('Error [radians]', 'FontSize', 12);
+title('Control Error: \theta_{disc} - \theta_{analytical}', 'FontSize', 14);
+
+subplot(2, 2, 2);
+plot(t_opt, (theta_opt - theta_analytical) * 180/pi, 'k-', 'LineWidth', 2);
+grid on;
+xlabel('Time t', 'FontSize', 12);
+ylabel('Error [degrees]', 'FontSize', 12);
+title('Control Error (degrees)', 'FontSize', 14);
+
+subplot(2, 2, 3);
+% Compute analytical trajectory for comparison
+[t_analytical, X_analytical] = ode45(@(t, X) zermelo_dynamics(t, X, w, tf), ...
+    linspace(0, tf, N+1), Xi);
+x_analytical = X_analytical(:, 1);
+y_analytical = X_analytical(:, 2);
+
+position_error = sqrt((x_opt - x_analytical).^2 + (y_opt - y_analytical).^2);
+plot(t_opt, position_error, 'k-', 'LineWidth', 2);
+grid on;
+xlabel('Time t', 'FontSize', 12);
+ylabel('Position Error', 'FontSize', 12);
+title('Position Error ||X_{disc} - X_{analytical}||', 'FontSize', 14);
+
+subplot(2, 2, 4);
+plot(x_opt, y_opt, 'b-', 'LineWidth', 2, 'DisplayName', 'Discretization');
+hold on;
+plot(x_analytical, y_analytical, 'r--', 'LineWidth', 2, 'DisplayName', 'Analytical');
+plot(x_opt(1), y_opt(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g');
+plot(x_opt(end), y_opt(end), 'ro', 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+grid on;
+xlabel('x', 'FontSize', 12);
+ylabel('y', 'FontSize', 12);
+title('Trajectory Comparison', 'FontSize', 14);
+legend('Location', 'northeast');
+axis equal;
+
+print('-dpng', '-r300', 'figures/zermelo_discretization_error_analysis.png');
+fprintf('Saved: figures/zermelo_discretization_error_analysis.png\n');
+
+fprintf('\nAll plots saved successfully!\n');
+
+
+%% Helper function: System dynamics
+function dXdt = zermelo_dynamics(t, X, w, tf)
+    % X = [x; y]
+    % Optimal control law
+    theta_opt = atan(tf - t);
+    
+    % Water current velocity (linear with y)
+    v_y = X(2);
+    
+    % State derivatives
+    dx_dt = w * cos(theta_opt) + v_y;
+    dy_dt = w * sin(theta_opt);
+    
+    dXdt = [dx_dt; dy_dt];
+end

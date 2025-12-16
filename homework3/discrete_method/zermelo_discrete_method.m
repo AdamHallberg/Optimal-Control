@@ -60,10 +60,10 @@ y_opt = Y_opt(2:3:end);
 theta_opt = Y_opt(3:3:end);
 t_opt = linspace(0, tf, N+1)';
 
-% Verify constraints
-[c, ceq] = zermeloNonlcon(Y_opt, Xi, T, w, N);
-fprintf('\nConstraint Verification:\n');
-fprintf('  Max constraint violation: %.6e\n', max(abs(ceq)));
+% % Verify constraints
+% [c, ceq] = zermeloNonlcon(Y_opt, Xi, T, w, N);
+% fprintf('\nConstraint Verification:\n');
+% fprintf('  Max constraint violation: %.6e\n', max(abs(ceq)));
 
 % Compare with analytical solution
 theta_analytical = atan(tf - t_opt);
@@ -90,48 +90,27 @@ fprintf('\n=================================================\n');
 fprintf('RESULTS WITHOUT GRADIENTS:\n');
 fprintf('=================================================\n');
 fprintf('  Optimal cost:           J = %.6f\n', fval_no_grad);
+fprintf('  Final position:         x(tf) = %.6f\n', Y_opt_no_grad(3*N+1));
+fprintf('                          y(tf) = %.6f\n', Y_opt_no_grad(3*N+2));
 fprintf('  Computation time:       %.3f seconds\n', time_no_grad);
 fprintf('=================================================\n');
+fprintf('\nComparison with Analytical Solution:\n');
+fprintf('  Analytical solution:    J = -1.147794\n');
+fprintf('  Error:                  %.6e (%.2f%%)\n', ...
+    abs(fval_no_grad + 1.147794), 100*abs(fval_no_grad + 1.147794)/1.147794);
 
 fprintf('\n=================================================\n');
-fprintf('COMPARISON (Exercise 1.2d):\n');
+fprintf('COMPARISON:\n');
 fprintf('=================================================\n');
 fprintf('Time:\n');
 fprintf('  With gradients:         %.3f seconds\n', time_with_grad);
 fprintf('  Without gradients:      %.3f seconds\n', time_no_grad);
-if time_with_grad < time_no_grad
-    fprintf('  Result:                 %.2fx FASTER with gradients\n', time_no_grad / time_with_grad);
-else
-    fprintf('  Result:                 %.2fx SLOWER with gradients\n', time_with_grad / time_no_grad);
-end
-fprintf('\nAccuracy:\n');
-fprintf('  Analytical solution:    J = -1.147794\n');
-fprintf('  Error (with grad):      %.6e\n', abs(fval + 1.147794));
-fprintf('  Error (no grad):        %.6e\n', abs(fval_no_grad + 1.147794));
-fprintf('  Cost difference:        %.6e\n', abs(fval - fval_no_grad));
-fprintf('\nConclusion:\n');
-if time_with_grad < time_no_grad
-    fprintf('  Analytical gradients are BENEFICIAL:\n');
-    fprintf('  - Faster (%.2fx speedup)\n', time_no_grad / time_with_grad);
-    fprintf('  - Similar or better accuracy\n');
-else
-    fprintf('  For this SMALL problem (N=%d), gradients are SLOWER:\n', N);
-    fprintf('  - Gradient computation overhead (%.2fx slower)\n', time_with_grad / time_no_grad);
-    fprintf('  - Accuracy is similar either way\n');
-    fprintf('  - For LARGER problems, gradients typically help!\n');
-    fprintf('  - Finite differences may be adequate for small N\n');
-end
-fprintf('=================================================\n');
 
-% Create plots
-if ~exist('figures', 'dir')
-    mkdir('figures');
-end
 
 figure('Position', [100 100 1400 900]);
 
 % Subplot 1: Trajectory
-subplot(2, 3, 1);
+subplot(3, 1, 1);
 plot(x_opt, y_opt, 'b-', 'LineWidth', 2);
 hold on;
 plot(x_opt(1), y_opt(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g');
@@ -143,19 +122,9 @@ title('Optimal Trajectory');
 legend('Trajectory', 'Start', 'End', 'Location', 'best');
 axis equal;
 
-% Subplot 2: States vs time
-subplot(2, 3, 2);
-plot(t_opt, x_opt, 'b-', 'LineWidth', 2);
-hold on;
-plot(t_opt, y_opt, 'r--', 'LineWidth', 2);
-grid on;
-xlabel('Time t');
-ylabel('Position');
-title('States vs Time');
-legend('x(t)', 'y(t)', 'Location', 'best');
 
 % Subplot 3: Control comparison
-subplot(2, 3, 3);
+subplot(3, 1, 2);
 plot(t_opt, theta_opt * 180/pi, 'b-', 'LineWidth', 2);
 hold on;
 plot(t_opt, theta_analytical * 180/pi, 'r--', 'LineWidth', 2);
@@ -166,36 +135,13 @@ title('Optimal Control');
 legend('Discretization', 'Analytical', 'Location', 'best');
 
 % Subplot 4: Control error
-subplot(2, 3, 4);
+subplot(3, 1, 3);
 plot(t_opt, (theta_opt - theta_analytical)*180/pi, 'k-', 'LineWidth', 2);
 grid on;
 xlabel('Time t');
 ylabel('Error [degrees]');
 title('Control Error');
 
-% Subplot 5: Position error
-subplot(2, 3, 5);
-[~, X_analytical] = ode45(@(t, X) zermelo_dynamics(t, X, w, tf), t_opt, Xi);
-pos_error = sqrt((x_opt - X_analytical(:,1)).^2 + (y_opt - X_analytical(:,2)).^2);
-plot(t_opt, pos_error, 'k-', 'LineWidth', 2);
-grid on;
-xlabel('Time t');
-ylabel('Position Error');
-title('Position Error');
-
-% Subplot 6: Constraint satisfaction
-subplot(2, 3, 6);
-dynamics_error = zeros(N, 1);
-for k = 1:N
-    x_pred = x_opt(k) + T * (w * cos(theta_opt(k)) + y_opt(k));
-    y_pred = y_opt(k) + T * w * sin(theta_opt(k));
-    dynamics_error(k) = sqrt((x_opt(k+1) - x_pred)^2 + (y_opt(k+1) - y_pred)^2);
-end
-semilogy(t_opt(1:N), dynamics_error, 'k-', 'LineWidth', 2);
-grid on;
-xlabel('Time t');
-ylabel('Constraint Error');
-title('Dynamics Constraint Satisfaction');
 
 print('-dpng', '-r300', 'figures/zermelo_fmincon_results.png');
 fprintf('\nSaved: figures/zermelo_fmincon_results.png\n');

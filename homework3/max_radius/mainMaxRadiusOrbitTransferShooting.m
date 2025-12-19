@@ -1,3 +1,8 @@
+% Setup
+clear 
+close all
+clc
+
 % Maximum orbit radius transfer problem solved with a shooting method.
 global T mdot
 T = 0.1405;
@@ -10,8 +15,9 @@ optim.Display = 'off';
 optim.Algorithm = 'levenberg-marquardt';
 
 %%% Start guess
-lambda0 = [???; ???; ???];
-
+% Task hints that (-1 -1 -1)' is a decent start guess.
+%lambda0 = [???; ???; ???];
+lambda0 = [-1; -1; -1];
 
 
 %%% Solve the problem
@@ -25,6 +31,6 @@ end
 
 [t,s] = ode23(@maxRadiusOrbitTransferEqAndAdjointEq, [0 tf], [xi;lambda0]); 
 
-finalRadius = ???
+finalRadius = s(length(t), 1);
 fprintf('Final radius: %f \n', finalRadius)
 plotResult(t, s);

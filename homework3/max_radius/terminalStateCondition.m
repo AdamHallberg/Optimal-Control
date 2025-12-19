@@ -12,8 +12,13 @@ v_tf = s(end,3);
 lambda_r_tf = s(end, 4);
 lambda_u_tf = s(end, 5);
 lambda_v_tf = s(end, 6);
-mu = zeros(3,1);
-mu(1) = ???; % final state constraint 1
-mu(2) = ???; % final state constraint 2 
-mu(3) = ???; % final state constraint 3
 
+%mu = zeros(3,1);
+%mu(1) = ???; % final state constraint 1
+%mu(2) = ???; % final state constraint 2 
+%mu(3) = ???; % final state constraint 3
+
+mu = zeros(3,1);
+mu(1) = u_tf;                     % u(tf) = 0
+mu(2) = v_tf - 1/sqrt(r_tf);      % v(tf) = 1/sqrt(r(tf))
+mu(3) = lambda_r_tf + 1 - lambda_v_tf/(2*(r_tf)^(3/2));

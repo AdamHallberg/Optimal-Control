@@ -58,8 +58,8 @@ opti.subject_to(v(N+1) == 1/sqrt(r(N+1))); % final Constraint: v(tf)=1/sqrt(r(tf
 
 % ---- initial values for solver ---
 opti.set_initial(r, 1);
-opti.set_initial(u, 0);
-opti.set_initial(v, 1);
+opti.set_initial(u, );
+opti.set_initial(v, );
 opti.set_initial(Theta, 0);
 
 % ---- solve NLP              ------

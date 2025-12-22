@@ -5,24 +5,19 @@ clear all;
 close all;
 clc;
 
-% Parameters
 tf = 1;      % Final time
 w = 1;       % Ship speed relative to water
-Xi = [0; 0]; % Initial position [x; y]
+Xi = [0; 0];
 
-% Gradient method parameters
-max_iter = 1000;        % Maximum iterations
-tol = 1e-6;             % Convergence tolerance
-alpha = 0.8;            % Step size
+max_iter = 1000;
+tol = 1e-6;
+alpha = 0.8;
 
-% Time discretization for integration
-N_time = 100;           % Number of time points for ODE
+N_time = 100;
 t_span = linspace(0, tf, N_time);
 
-% Initial guess for control
-theta0 = zeros(N_time, 1);  % Start with zero control
+theta0 = zeros(N_time, 1);
 
-% Gradient descent algorithm
 fprintf('\nStarting gradient descent...\n');
 fprintf('Initial step size alpha = %.3f\n', alpha);
 
@@ -74,12 +69,10 @@ for iter = 1:max_iter
     end
     
     % Gradient descent update
-    % Note: We do DESCENT on the gradient to minimize J
     theta = theta - alpha * grad_theta;
 end
 time_elapsed = toc;
 
-% Final solution
 [t_final, X_final] = ode45(@(t, X) zermelo_state_dynamics(t, X, theta, t_span, w), ...
                            t_span, Xi);
 x_final = X_final(:, 1);
@@ -87,7 +80,7 @@ y_final = X_final(:, 2);
 J_final = -x_final(end);
 
 fprintf('\n=================================================\n');
-fprintf('RESULTS (Exercise 1.3b):\n');
+fprintf('RESULTS:\n');
 fprintf('=================================================\n');
 fprintf('  Optimal cost:           J = %.6f\n', J_final);
 fprintf('  Final position:         x(tf) = %.6f\n', x_final(end));
@@ -107,15 +100,13 @@ fprintf('  Error:                  %.6e (%.2f%%)\n', ...
     abs(J_final + 1.147794), 100*abs(J_final + 1.147794)/1.147794);
 fprintf('=================================================\n');
 
-% Create plots
 if ~exist('figures', 'dir')
     mkdir('figures');
 end
 
 figure('Position', [100 100 1400 900]);
 
-% Subplot 1: Trajectory
-subplot(2, 3, 1);
+subplot(2, 2, 1);
 plot(x_final, y_final, 'b-', 'LineWidth', 2);
 hold on;
 plot(x_final(1), y_final(1), 'go', 'MarkerSize', 10, 'MarkerFaceColor', 'g');
@@ -127,19 +118,7 @@ title('Optimal Trajectory (Gradient Method)');
 legend('Trajectory', 'Start', 'End', 'Location', 'best');
 axis equal;
 
-% Subplot 2: States vs time
-subplot(2, 3, 2);
-plot(t_final, x_final, 'b-', 'LineWidth', 2);
-hold on;
-plot(t_final, y_final, 'r--', 'LineWidth', 2);
-grid on;
-xlabel('Time t');
-ylabel('Position');
-title('States vs Time');
-legend('x(t)', 'y(t)', 'Location', 'best');
-
-% Subplot 3: Control comparison
-subplot(2, 3, 3);
+subplot(2, 2, 2);
 plot(t_span, theta * 180/pi, 'b-', 'LineWidth', 2);
 hold on;
 plot(t_span, theta_analytical * 180/pi, 'r--', 'LineWidth', 2);
@@ -149,24 +128,14 @@ ylabel('\theta(t) [degrees]');
 title('Optimal Control');
 legend('Gradient Method', 'Analytical', 'Location', 'best');
 
-% Subplot 4: Cost history
-subplot(2, 3, 4);
+subplot(2, 2, 3);
 plot(1:iter, J_history(1:iter), 'k-', 'LineWidth', 2);
 grid on;
 xlabel('Iteration');
 ylabel('Cost J');
 title('Convergence History');
 
-% Subplot 5: Control error
-subplot(2, 3, 5);
-plot(t_span, (theta - theta_analytical)*180/pi, 'k-', 'LineWidth', 2);
-grid on;
-xlabel('Time t');
-ylabel('Error [degrees]');
-title('Control Error');
-
-% Subplot 6: Gradient norm history
-subplot(2, 3, 6);
+subplot(2, 2, 4);
 semilogy(1:iter, gradient_norms(1:iter), 'k-', 'LineWidth', 2);
 grid on;
 xlabel('Iteration');
